@@ -3,6 +3,10 @@
 #include <fstream>
 #include <functional>
 #include <map>
+#ifdef __linux
+#include <stddef.h>
+#include <cmath>
+#endif
 
 #include "../Shakara/Tokenizer/TokenizerTypes.hpp"
 #include "../Shakara/Tokenizer/Tokenizer.hpp"
