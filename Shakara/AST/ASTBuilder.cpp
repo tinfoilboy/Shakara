@@ -460,7 +460,7 @@ void ASTBuilder::_ParseIfStatement(
 
 	// Now, check if there is an else keyword, and if there
 	// is, move on to the next keyword
-	if (tokens[*next].type == TokenType::ELSE_STATEMENT)
+	if (static_cast<size_t>((*next)) < tokens.size() && tokens[*next].type == TokenType::ELSE_STATEMENT)
 	{
 		(*next)++;
 
@@ -470,7 +470,7 @@ void ASTBuilder::_ParseIfStatement(
 	// This must be an else if in this case, thus make
 	// a new if statement node and attach it to the
 	// current if statement
-	if (tokens[*next].type == TokenType::IF_STATEMENT && hasElse)
+	if (static_cast<size_t>((*next)) < tokens.size() && tokens[*next].type == TokenType::IF_STATEMENT && hasElse)
 	{
 		IfStatement* elseIf = new IfStatement();
 		elseIf->Type(NodeType::IF_STATEMENT);
@@ -486,7 +486,7 @@ void ASTBuilder::_ParseIfStatement(
 	}
 	// Otherwise, see if there is a begin block and
 	// if so, parse the block
-	else if (tokens[*next].type == TokenType::BEGIN_BLOCK && hasElse)
+	else if (static_cast<size_t>((*next)) < tokens.size() && tokens[*next].type == TokenType::BEGIN_BLOCK && hasElse)
 	{
 		RootNode* body = new RootNode();
 
