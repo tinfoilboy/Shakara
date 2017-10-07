@@ -313,6 +313,7 @@ void Interpreter::_ExecuteAssign(
 	else if (assign->GetAssignment()->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
 		value = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(assign->GetAssignment()), scope)->Clone();
 
+
 	if (!value)
 	{
 		std::cerr << "Interpreter Error! Invalid type used in assignment!" << std::endl;
@@ -325,6 +326,8 @@ void Interpreter::_ExecuteAssign(
 		if (m_errorHandle)
 			m_errorHandle();
 	}
+
+	value->MarkDelete(true);
 
 	// If this is just a plain identifier, just
 	// insert into the scope, otherwise, try
@@ -416,7 +419,7 @@ void Interpreter::_ExecuteIfStatement(
 	Node* condition = statement->Condition();
 
 	if (condition->Type() == NodeType::IDENTIFIER)
-		condition = scope.Search(static_cast<IdentifierNode*>(condition)->Value());
+		condition = scope.Search(static_cast<IdentifierNode*>(condition)->Value())->Clone();
 	else if (condition->Type() == NodeType::CALL)
 		condition = _ExecuteFunction(static_cast<FunctionCall*>(condition), scope);
 	else if (condition->Type() == NodeType::BINARY_OP)
@@ -424,7 +427,7 @@ void Interpreter::_ExecuteIfStatement(
 	else if (condition->Type() == NodeType::LOGICAL_OP)
 		condition = _ExecuteLogicalOperation(static_cast<BinaryOperation*>(condition), scope);
 	else if (condition->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
-		condition = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(condition), scope);
+		condition = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(condition), scope)->Clone();
 
 	// Make sure that the condition is a boolean value
 	// otherwise, you can't exactly "evaluate" the statement
@@ -432,6 +435,12 @@ void Interpreter::_ExecuteIfStatement(
 	{
 		std::cerr << "Interpreter Error! If statement's condition must be of a boolean return!" << std::endl;
 		std::cerr << "Current condition type: " << GetNodeTypeName(condition->Type()) << std::endl;
+
+		if (condition)
+		{
+			delete condition;
+			condition = nullptr;
+		}
 
 		if (m_errorHandle)
 			m_errorHandle();
@@ -481,6 +490,12 @@ void Interpreter::_ExecuteIfStatement(
 			&elseScope
 		);
 	}
+
+	if (condition)
+	{
+		delete condition;
+		condition = nullptr;
+	}
 }
 
 void Interpreter::_ExecuteWhileStatement(
@@ -494,13 +509,15 @@ void Interpreter::_ExecuteWhileStatement(
 	Node* condition = statement->Condition();
 
 	if (condition->Type() == NodeType::IDENTIFIER)
-		condition = scope.Search(static_cast<IdentifierNode*>(condition)->Value());
+		condition = scope.Search(static_cast<IdentifierNode*>(condition)->Value())->Clone();
 	else if (condition->Type() == NodeType::CALL)
 		condition = _ExecuteFunction(static_cast<FunctionCall*>(condition), scope);
 	else if (condition->Type() == NodeType::BINARY_OP)
 		condition = _ExecuteBinaryOperation(static_cast<BinaryOperation*>(condition), scope);
 	else if (condition->Type() == NodeType::LOGICAL_OP)
 		condition = _ExecuteLogicalOperation(static_cast<BinaryOperation*>(condition), scope);
+	else if (condition->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
+		condition = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(condition), scope)->Clone();
 
 	// Make sure that the condition is a boolean value
 	// otherwise, you can't exactly "evaluate" the statement
@@ -531,18 +548,26 @@ void Interpreter::_ExecuteWhileStatement(
 			&whileScope
 		);
 
+		if (condition)
+		{
+			delete condition;
+			condition = nullptr;
+		}
+
 		// Re-evaluate using the same code as used above
 		// First, try and evaluate the condition
 		condition = statement->Condition();
 
 		if (condition->Type() == NodeType::IDENTIFIER)
-			condition = scope.Search(static_cast<IdentifierNode*>(condition)->Value());
+			condition = scope.Search(static_cast<IdentifierNode*>(condition)->Value())->Clone();
 		else if (condition->Type() == NodeType::CALL)
 			condition = _ExecuteFunction(static_cast<FunctionCall*>(condition), scope);
 		else if (condition->Type() == NodeType::BINARY_OP)
 			condition = _ExecuteBinaryOperation(static_cast<BinaryOperation*>(condition), scope);
 		else if (condition->Type() == NodeType::LOGICAL_OP)
 			condition = _ExecuteLogicalOperation(static_cast<BinaryOperation*>(condition), scope);
+		else if (condition->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
+			condition = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(condition), scope)->Clone();
 
 		// Make sure that the condition is a boolean value
 		// otherwise, you can't exactly "evaluate" the statement
@@ -551,11 +576,23 @@ void Interpreter::_ExecuteWhileStatement(
 			std::cerr << "Interpreter Error! If statement's condition must be of a boolean return!" << std::endl;
 			std::cerr << "Current condition type: " << GetNodeTypeName(condition->Type()) << std::endl;
 
+			if (condition)
+			{
+				delete condition;
+				condition = nullptr;
+			}
+
 			if (m_errorHandle)
 				m_errorHandle();
 
 			return;
 		}
+	}
+
+	if (condition)
+	{
+		delete condition;
+		condition = nullptr;
 	}
 }
 
@@ -2903,6 +2940,8 @@ void Interpreter::_CreateCommandArgumentsArray()
 
 		cmdArgsArray->Insert(argument);
 	}
+
+	cmdArgsArray->MarkDelete(true);
 
 	// Now, insert it into global scope with
 	// the reserved array name defined in
