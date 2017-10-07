@@ -1699,6 +1699,8 @@ CallFlags ASTBuilder::_GetCallFlagFromIdentifier(const std::string& identifier)
 		return CallFlags::TYPE;
 	else if (identifier == "amt")
 		return CallFlags::AMOUNT;
+	else if (identifier == "exit")
+		return CallFlags::EXIT;
 	else if (identifier == "integer")
 		return CallFlags::INTEGER_CAST;
 	else if (identifier == "decimal")

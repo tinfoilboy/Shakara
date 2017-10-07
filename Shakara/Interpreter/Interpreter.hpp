@@ -241,6 +241,19 @@ namespace Shakara
 		);
 
 		/**
+		 * Take in a special exit function call and
+		 * close out of the current program. An optional
+		 * code can also be passed in.
+		 *
+		 * The scope argument is used for functions
+		 * to grab variables defined within.
+		 */
+		AST::Node* _ExecuteExit(
+			AST::FunctionCall* exitCall,
+			Scope&             scope
+		);
+
+		/**
 		 * Take in a special amount function call and
 		 * return the integer size of the collection.
 		 *

@@ -11,18 +11,19 @@ namespace Shakara
 			PRINT           = 0x01,
 			TYPE            = 0x02,
 			AMOUNT          = 0x03,
+			EXIT            = 0x04,
 
 			/**
 			 * Calls for casting between
 			 * built-in types
 			 */
-			INTEGER_CAST    = 0x04,
-			DECIMAL_CAST    = 0x05,
-			STRING_CAST     = 0x06,
-			BOOLEAN_CAST    = 0x07,
+			INTEGER_CAST    = 0x05,
+			DECIMAL_CAST    = 0x06,
+			STRING_CAST     = 0x07,
+			BOOLEAN_CAST    = 0x08,
 
-			PUSH_COLLECTION = 0x08,
-			POP_COLLECTION  = 0x09
+			PUSH_COLLECTION = 0x09,
+			POP_COLLECTION  = 0x0F
 		};
 
 		class FunctionCall : public Node

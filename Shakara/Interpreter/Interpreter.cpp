@@ -809,6 +809,11 @@ Node* Interpreter::_ExecuteFunction(
 			call,
 			scope
 		);
+	else if (call->Flags() == CallFlags::EXIT)
+		return _ExecuteExit(
+			call,
+			scope
+		);
 	else if (call->Flags() == CallFlags::PUSH_COLLECTION)
 		return _ExecutePush(
 			call,
@@ -840,9 +845,25 @@ Node* Interpreter::_ExecuteFunction(
 			scope
 		);
 
+	std::string potentialIdent = static_cast<IdentifierNode*>(call->Identifier())->Value();
+
+	// Check and make sure that this method
+	// actually exists before executing
+	Node* search = scope.Search(potentialIdent);
+
+	if (!search)
+	{
+		std::cerr << "Interpreter Error! Tried to call undefined function \"" << potentialIdent << "\"" << std::endl;
+
+		if (m_errorHandle)
+			m_errorHandle();
+
+		return nullptr;
+	}
+
 	// First, try and find the actual function
 	// declaration in the global map
-	FunctionDeclaration* declaration = static_cast<FunctionDeclaration*>(scope.Search(static_cast<IdentifierNode*>(call->Identifier())->Value()));
+	FunctionDeclaration* declaration = static_cast<FunctionDeclaration*>(search);
 
 	if (declaration->Arguments().size() != call->Arguments().size())
 	{
@@ -1279,6 +1300,92 @@ Node* Interpreter::_ExecuteAmount(
 		
 		return nullptr;
 	}
+}
+
+Node* Interpreter::_ExecuteExit(
+	FunctionCall* exitCall,
+	Scope&        scope
+)
+{
+	// Be sure that this is a print call
+	if (exitCall->Flags() != CallFlags::EXIT)
+		return nullptr;
+
+	// Make sure that only one argument is
+	// in the call, as you can only grab the
+	// type of one node
+	if (exitCall->Arguments().size() > 1)
+	{
+		std::cerr << "Interpreter Error! The \"exitCall\" call can only have either zero or one argument!" << std::endl;
+		std::cerr << "Argument amount: " << exitCall->Arguments().size() << std::endl;
+
+		if (m_errorHandle)
+			m_errorHandle();
+
+		return nullptr;
+	}
+
+	int32_t code = 0;
+
+	// If there is one argument, get the code for that
+	// argument if possible
+	if (exitCall->Arguments().size() == 1)
+	{
+		Node*     exitCallCode    = exitCall->Arguments()[0];
+		NodeType  currentType = exitCallCode->Type();
+		Node*     value       = exitCallCode;
+		bool      deleteNode  = true;
+
+		// First, grab the identifier value before
+		// trying to evaluate amounts
+		if (currentType == NodeType::IDENTIFIER)
+		{
+			value = scope.Search(static_cast<IdentifierNode*>(exitCallCode)->Value());
+			currentType = value->Type();
+			deleteNode = false;
+		}
+
+		// Now, move onto trying to evaluate a binary
+		// operation or a function call, which must
+		// result in an array or a string
+		if (currentType == NodeType::BINARY_OP)
+		{
+			value = _ExecuteBinaryOperation(static_cast<BinaryOperation*>(exitCallCode), scope);
+			currentType = value->Type();
+			deleteNode = true;
+		}
+		else if (currentType == NodeType::CALL)
+		{
+			value = _ExecuteFunction(static_cast<FunctionCall*>(exitCallCode), scope);
+			currentType = value->Type();
+			deleteNode = true;
+		}
+		else if (currentType == NodeType::ARRAY_ELEMENT_IDENTIFIER)
+		{
+			value = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(exitCallCode), scope);
+			currentType = value->Type();
+			deleteNode = value->MarkedForDeletion();
+		}
+		
+		// Make sure the code is of an integer type
+		if (value->Type() != NodeType::INTEGER)
+		{
+			std::cerr << "Interpreter Error! Argument for the \"exitCall\" function must be an integer!" << std::endl;
+			std::cerr << "Argument type: " << GetNodeTypeName(value->Type()) << std::endl;
+
+			if (deleteNode)
+				delete value;
+
+			if (m_errorHandle)
+				m_errorHandle();
+
+			return nullptr;
+		}
+
+		code = static_cast<IntegerNode*>(value)->Value();
+	}
+
+	exit(code);	
 }
 
 Node* Interpreter::_ExecutePush(

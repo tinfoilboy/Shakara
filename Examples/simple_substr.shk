@@ -4,7 +4,11 @@ substr = (str, start, end)
 {
 	result = ""
 
-	// TODO: make sure string is long enough
+	if (end < start)
+	{
+		print("End must be greater than start!\n")
+		exit()
+	}
 
 	while (start <= end)
 	{
@@ -18,10 +22,13 @@ substr = (str, start, end)
 
 // This function 
 if (amt(shk__cmd_args) != 4)
+{
 	print("This program requires three arguments, a string, a starting integer, and an ending integer to work!", "\n")
+	exit()
+}
 
 name  = shk__cmd_args[1]
 begin = integer(shk__cmd_args[2])
 stop  = integer(shk__cmd_args[3])
 
-print(substr(name, begin, stop))
+print(substr(name, begin, stop), "\n")
