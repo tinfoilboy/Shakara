@@ -1,0 +1,26 @@
+// Take in a string and start/end points
+// and return the sub
+substr = (str, start, end)
+{
+	substr = ""
+
+	// TODO: make sure string is long enough
+
+	while (start < end)
+	{
+		substr += str[start]
+
+		start++
+	}
+
+	return substr
+}
+
+if (amt(shk__cmd_args) != 4)
+	print("This program requires three arguments, a string, a starting integer, and an ending integer to work!", "\n")
+
+name  = shk__cmd_args[1]
+begin = integer(shk__cmd_args[2])
+stop  = integer(shk__cmd_args[3])
+
+print(substr(name, begin, stop))
