@@ -41,6 +41,8 @@ double quotes.
 The amount of characters in a string can be grabbed with the
 `amt` function, passing the string in as an argument.
 
+You may access a character in a string using an array access.
+
 ##### Escape Sequences
 
 Shakara strings, like many other languages, support escape sequences
@@ -256,6 +258,16 @@ of arguments.
 
 The arguments array's first element will always start with the path of the
 Shakara file ran, and then go into the subsequent arguments.
+
+### Exiting
+
+If you wish to exit a script prematurely, use the `exit` function. Like below:
+
+    exit()
+
+You may also add an optional integer exit code, like such:
+
+    exit(1)
 
 ### *Structs*
 

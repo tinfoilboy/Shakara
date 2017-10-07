@@ -20,7 +20,8 @@ substr = (str, start, end)
 	return result
 }
 
-// This function 
+// Make sure that there are exactly four arguments to be
+// used in this script
 if (amt(shk__cmd_args) != 4)
 {
 	print("This program requires three arguments, a string, a starting integer, and an ending integer to work!", "\n")
