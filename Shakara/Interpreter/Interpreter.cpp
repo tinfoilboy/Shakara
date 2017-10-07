@@ -280,14 +280,9 @@ void Interpreter::_ExecuteAssign(
 	else if (assign->GetIdentifier()->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
 		identifier = static_cast<ArrayElementIdentifierNode*>(assign->GetIdentifier())->ArrayIdentifier();
 
-	// Try and see if the identifier exists in the globals
-	// map, if so, remove the previous value and add a new
-	// node
-	//
-	// Though, if local is true, try finding in the globals
-	// first, and if its there, modify, otherwise, try adding
-	// to the scope map
-	//Node* find = scope.Search(identifier);
+	// TODO: Make sure that setting a variable of the same
+	// name of a function call, while inside of the call,
+	// doesn't just segfault the program
 
 	Node* value = nullptr;
 
@@ -355,10 +350,13 @@ void Interpreter::_ExecuteAssign(
 				m_errorHandle();
 		}
 
-		if (arrayNode->Type() != NodeType::ARRAY || arrayNode->Type() == NodeType::STRING)
+		if (arrayNode->Type() != NodeType::ARRAY && arrayNode->Type() != NodeType::STRING)
 		{
 			std::cerr << "Interpreter Error! Cannot assign to a collection element with a non-collection type!" << std::endl;
 			std::cerr << "Actual type: " << GetNodeTypeName(arrayNode->Type()) << std::endl;
+
+			if (m_errorHandle)
+				m_errorHandle();
 		}
 
 		// Grab the array index
@@ -912,7 +910,8 @@ Node* Interpreter::_ExecuteFunction(
 		{
 			IdentifierNode* referencedName = static_cast<IdentifierNode*>(argument);
 
-			Node* node = m_globalScope.Search(referencedName->Value());
+			Node* node = m_globalScope.Search(referencedName->Value())->Clone();
+			node->MarkDelete(true);
 
 			functionScope.Insert(identifier, node);
 		}
@@ -947,6 +946,15 @@ Node* Interpreter::_ExecuteFunction(
 			}
 
 			functionScope.Insert(identifier, result);
+		}
+		else if (argument->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
+		{
+			Node* result = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(argument), scope);
+
+			if (!argument->MarkedForDeletion())
+				result = argument->Clone();
+
+			result->MarkDelete(true);
 		}
 		else
 			functionScope.Insert(identifier, argument);
@@ -3062,7 +3070,7 @@ AST::Node* Interpreter::_GetArrayElement(
 		return nullptr;
 	}
 
-	if (arrayNode->Type() != NodeType::ARRAY || arrayNode->Type() != NodeType::STRING)
+	if (arrayNode->Type() != NodeType::ARRAY && arrayNode->Type() != NodeType::STRING)
 	{
 		std::cerr << "Interpreter Error! Cannot use array access syntax on a non collection type!" << std::endl;
 		std::cerr << "Actual type: " << GetNodeTypeName(arrayNode->Type()) << std::endl;
@@ -3146,7 +3154,7 @@ AST::Node* Interpreter::_GetArrayElement(
 		returnNode = new StringNode();
 		returnNode->Type(NodeType::STRING);
 
-		static_cast<StringNode*>(returnNode)->Value(std::string(static_cast<StringNode*>(arrayNode)->Value().at(arrIndex), 1));
+		static_cast<StringNode*>(returnNode)->Value(std::string(1, static_cast<StringNode*>(arrayNode)->Value().at(arrIndex)));
 
 		returnNode->MarkDelete(true);
 	}

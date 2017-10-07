@@ -2,20 +2,21 @@
 // and return the sub
 substr = (str, start, end)
 {
-	substr = ""
+	result = ""
 
 	// TODO: make sure string is long enough
 
-	while (start < end)
+	while (start <= end)
 	{
-		substr += str[start]
+		result += str[start]
 
 		start++
 	}
 
-	return substr
+	return result
 }
 
+// This function 
 if (amt(shk__cmd_args) != 4)
 	print("This program requires three arguments, a string, a starting integer, and an ending integer to work!", "\n")
 
