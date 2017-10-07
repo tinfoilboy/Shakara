@@ -545,6 +545,9 @@ namespace ShakaraTest
 				// Create a test statement and insert
 				// it into a stringstream
 				std::string code = R"(
+					// Create an array of phrases
+                    // and use a variety of different
+                    // types to see if it works
 					potatoes = "Home-fried potatoes"
 					phrases = [5] {
 						"I don't eat no ham and eggs",

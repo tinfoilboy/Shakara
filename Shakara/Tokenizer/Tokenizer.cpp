@@ -31,10 +31,41 @@ TokenizeError Tokenizer::Tokenize(
 	// character will be escaped
 	bool escapeNext = false;
 
+	// Whether or not we are on a comment line,
+	// and if so, don't parse anything.
+	bool commentLine = false;
+
 	// Read through each character in the
 	// file stream
 	while (stream.get(current))
 	{
+		// If we aren't parsing a string and we hit a comment
+		// token, '//', then start ignoring characters as comments
+		if (
+			!parsingString &&
+			(current == '/' &&
+			last == '/')
+		)
+		{
+			// RemoveB the extra divide token since it is a comment
+			if (tokens.size() > 0 && tokens[tokens.size() - 1].type == TokenType::DIVIDE)
+				tokens.pop_back();
+
+			commentLine = true;
+			continue;
+		}
+
+		// Ignore characters while in a comment
+		if (commentLine && current != '\n')
+			continue;
+		// If we have hit a new line while commenting
+		// we are no longer commenting.
+		else if (commentLine && current == '\n')
+		{
+			commentLine = false;
+			continue;
+		}
+
 		// Handle any kind of whitespace by
 		// trying to get a token type from
 		// the value currently in place
@@ -158,7 +189,7 @@ TokenizeError Tokenizer::Tokenize(
 			token.column = column;
 
 			// Try and make a unary operator
-			if (_MakeUnary(
+			if (tokens.size() >= 1 && _MakeUnary(
 				token,
 				tokens[tokens.size() - 1],
 				last
