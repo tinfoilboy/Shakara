@@ -764,18 +764,21 @@ void Interpreter::_ExecuteArrayDeclaration(
 		finalArray->Insert(element);
 
 		// Make sure that we are not going over the
-		// capacity
-		int32_t capacityVal = static_cast<IntegerNode*>(finalArray->Capacity())->Value();
-
-		if (finalArray->Size() > static_cast<size_t>(capacityVal))
+		// capacity, if present
+		if (finalArray->Capacity())
 		{
-			std::cerr << "Interpreter Error! Element count in array definition, \"" << identifier << "\" is over the fixed capacity!" << std::endl;
-			std::cerr << "Element count: " << finalArray->Size() << "; Capacity: " << capacityVal << std::endl;
+			int32_t capacityVal = static_cast<IntegerNode*>(finalArray->Capacity())->Value();
 
-			delete finalArray;
+			if (finalArray->Size() > static_cast<size_t>(capacityVal))
+			{
+				std::cerr << "Interpreter Error! Element count in array definition, \"" << identifier << "\" is over the fixed capacity!" << std::endl;
+				std::cerr << "Element count: " << finalArray->Size() << "; Capacity: " << capacityVal << std::endl;
 
-			if (m_errorHandle)
-				m_errorHandle();
+				delete finalArray;
+
+				if (m_errorHandle)
+					m_errorHandle();
+			}
 		}
 	}
 
@@ -1084,7 +1087,11 @@ void Interpreter::_ExecutePrint(
 	}
 }
 
-void Interpreter::_PrintTypedNode(Node* node)
+void Interpreter::_PrintTypedNode(
+	Node* node,
+	bool  stringQuotes,
+	bool  commaAfter
+)
 {
 	switch (node->Type())
 	{
@@ -1092,7 +1099,7 @@ void Interpreter::_PrintTypedNode(Node* node)
 	{
 		IntegerNode* integer = static_cast<IntegerNode*>(node);
 
-		m_output << integer->Value();
+		m_output << integer->Value() << ((commaAfter) ? ", " : "");
 
 		break;
 	}
@@ -1100,7 +1107,7 @@ void Interpreter::_PrintTypedNode(Node* node)
 	{
 		DecimalNode* decimal = static_cast<DecimalNode*>(node);
 
-		m_output << decimal->Value();
+		m_output << decimal->Value() << ((commaAfter) ? ", " : "");
 
 		break;
 	}
@@ -1108,7 +1115,13 @@ void Interpreter::_PrintTypedNode(Node* node)
 	{
 		StringNode* string = static_cast<StringNode*>(node);
 
-		m_output << string->Value();
+		if (stringQuotes)
+			m_output << "\"";
+
+		m_output << string->Value() << ((commaAfter && !stringQuotes) ? ", " : "");
+
+		if (stringQuotes)
+			m_output << "\"" << ((commaAfter) ? ", " : "");
 
 		break;
 	}
@@ -1116,13 +1129,34 @@ void Interpreter::_PrintTypedNode(Node* node)
 	{
 		BooleanNode* boolean = static_cast<BooleanNode*>(node);
 
-		m_output << std::boolalpha << boolean->Value();
+		m_output << std::boolalpha << boolean->Value() << ((commaAfter) ? ", " : "");
+
+		break;
+	}
+	case NodeType::ARRAY:
+	{
+		ArrayNode* arrayNode = static_cast<ArrayNode*>(node);
+
+		// Print out the starting left bracket
+		m_output << "[ ";
+
+		// Iterate through and print each individual
+		// node within
+		for (size_t index = 0; index < arrayNode->Size(); index++)
+			_PrintTypedNode(
+				(*arrayNode)[index],
+				true,
+				(index != arrayNode->Size() - 1)
+			);
+
+		// Print out the ending right bracket
+		m_output << " ]" << ((commaAfter) ? ", " : "");
 
 		break;
 	}
 	default:
 	{
-		m_output << GetNodeTypeName(node->Type());
+		m_output << GetNodeTypeName(node->Type()) << ((commaAfter) ? ", " : "");
 
 		break;
 	}

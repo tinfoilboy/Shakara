@@ -329,7 +329,11 @@ namespace Shakara
 		 * Checks the type of a node and prints it
 		 * accordingly.
 		 */
-		void _PrintTypedNode(AST::Node* node);
+		void _PrintTypedNode(
+			AST::Node* node,
+			bool       stringQuotes=false,
+			bool       commaAfter=false
+		);
 
 		/**
 		 * Execute a binary operation and return a

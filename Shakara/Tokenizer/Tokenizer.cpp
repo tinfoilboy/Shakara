@@ -469,6 +469,11 @@ bool Tokenizer::_DetermineTokenTypeFromValue(TokenType* type, const std::string&
 		*type = TokenType::WHILE_STATEMENT;
 		return true;
 	}
+	else if (value == "foreach")
+	{
+		*type = TokenType::FOREACH_STATEMENT;
+		return true;
+	}
 	else if (value == "true")
 	{
 		*type = TokenType::BOOLEAN;

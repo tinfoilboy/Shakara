@@ -1,0 +1,8 @@
+test = [] {
+	"Hello",
+	1,
+	8 * 9,
+	"World!"
+}
+
+print(test)
