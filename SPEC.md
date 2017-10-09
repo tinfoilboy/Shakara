@@ -269,6 +269,34 @@ You may also add an optional integer exit code, like such:
 
     exit(1)
 
+### *For-each Loops*
+
+In attempt to make iterating through collections simple, implementing a
+syntax like D could be beneficial. In my head this is how you could start
+it:
+
+    foreach (collection)
+
+This will iterate through the collection, and create a variable called
+`item` which will be the item that you are currently on. You may also
+want to rename this `item` variable, which you can do like below:
+
+    foreach (collection, thing)
+
+Which will then set the current item to the identifier `thing` rather
+than `item`. You may also want to get the current index, which you can
+do like this:
+
+    foreach (collection, thing, index)
+
+This will also set a variable called `index` which will, obviously,
+contain the index of the loop.
+
+You may also get just the index and not reset the `item` variable
+name, like below:
+
+    foreach (collection,, index)
+
 ### *Structs*
 
 For Shakara, I want to experiment with only using struct types as containers

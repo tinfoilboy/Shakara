@@ -4,7 +4,7 @@ substr = (str, start, end)
 {
 	result = ""
 
-	if (end < start)
+	if (end <= start)
 	{
 		print("End must be greater than start!\n")
 		exit()
