@@ -26,5 +26,6 @@
 #include "../Shakara/AST/Nodes/ASTDecimalNode.hpp"
 #include "../Shakara/AST/Nodes/ASTArrayNode.hpp"
 #include "../Shakara/AST/Nodes/ASTArrayElementIdentifier.hpp"
+#include "../Shakara/AST/Nodes/ASTForeachStatementNode.hpp"
 
 #include "../Shakara/Interpreter/Interpreter.hpp"

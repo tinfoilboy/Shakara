@@ -1106,6 +1106,133 @@ namespace ShakaraTest
 				);
 			}
 
+			TEST_METHOD(ASTBuildForeachLoop)
+			{
+				// Create a test statement and insert
+				// it into a stringstream
+				std::string code = R"(
+					foreach (collection)
+					{
+					}
+
+					foreach (collection, item)
+					{
+					}
+
+					foreach (collection, item, index)
+					{
+					}
+
+					foreach (collection,, index)
+					{
+					}
+				)";
+
+				std::stringstream stream(code, std::ios::in);
+
+				// Tokenize the stringstream
+				std::vector<Shakara::Token> tokens;
+
+				Shakara::Tokenizer tokenizer;
+				tokenizer.Tokenize(stream, tokens);
+
+				// Run the ASTBuilder to grab an AST
+				Shakara::AST::RootNode   root;
+				Shakara::AST::ASTBuilder builder;
+				builder.Build(&root, tokens);
+
+				// There should only be four children in
+				// the root node
+				Assert::AreEqual(
+					static_cast<size_t>(4),
+					static_cast<size_t>(root.Children())
+				);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::FOREACH_STATEMENT),
+					static_cast<uint8_t>(root[0]->Type())
+				);
+
+				// Make sure that the foreach has an identifier for the
+				// collection but no item or index names
+				Shakara::AST::ForeachStatement* firstForeach = static_cast<Shakara::AST::ForeachStatement*>(root[0]);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(firstForeach->Collection()->Type())
+				);
+
+				Assert::IsNull(firstForeach->ItemName());
+
+				Assert::IsNull(firstForeach->IndexName());
+
+				// Do the same for the second, but instead check if
+				// the item name is an identifier
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::FOREACH_STATEMENT),
+					static_cast<uint8_t>(root[1]->Type())
+				);
+
+				Shakara::AST::ForeachStatement* secondForeach = static_cast<Shakara::AST::ForeachStatement*>(root[1]);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(secondForeach->Collection()->Type())
+				);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(secondForeach->ItemName()->Type())
+				);
+
+				Assert::IsNull(secondForeach->IndexName());
+
+				// Make sure all of the parts of this foreach
+				// are defined
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::FOREACH_STATEMENT),
+					static_cast<uint8_t>(root[2]->Type())
+				);
+
+				Shakara::AST::ForeachStatement* thirdForeach = static_cast<Shakara::AST::ForeachStatement*>(root[2]);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(thirdForeach->Collection()->Type())
+				);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(thirdForeach->ItemName()->Type())
+				);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(thirdForeach->IndexName()->Type())
+				);
+
+				// Finally, make sure the item name is omitted in
+				// this loop
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::FOREACH_STATEMENT),
+					static_cast<uint8_t>(root[3]->Type())
+				);
+
+				Shakara::AST::ForeachStatement* fourthForeach = static_cast<Shakara::AST::ForeachStatement*>(root[3]);
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(fourthForeach->Collection()->Type())
+				);
+
+				Assert::IsNull(fourthForeach->ItemName());
+
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::AST::NodeType::IDENTIFIER),
+					static_cast<uint8_t>(fourthForeach->IndexName()->Type())
+				);
+			}
+
 		};
 	}
 }

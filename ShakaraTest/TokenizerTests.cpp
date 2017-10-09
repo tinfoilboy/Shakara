@@ -798,6 +798,59 @@ namespace ShakaraTest
 				);
 			}
 
+			TEST_METHOD(TokenizeForeach)
+			{
+				std::string statement = R"(
+					foreach (collection)
+					{
+					}
+				)";
+
+				std::stringstream stream(statement, std::ios::in);
+
+				std::vector<Shakara::Token> tokens;
+
+				Shakara::Tokenizer tokenizer;
+				tokenizer.Tokenize(stream, tokens);
+
+				// Make sure that we have three tokens
+				// for this test statement
+				Assert::AreEqual(static_cast<size_t>(6), tokens.size());
+
+				// Next, make sure that each token is
+				// the right type
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::TokenType::FOREACH_STATEMENT),
+					static_cast<uint8_t>(tokens[0].type),
+					L"Incorrect token type! Expected FOREACH_STATEMENT!"
+				);
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::TokenType::BEGIN_ARGS),
+					static_cast<uint8_t>(tokens[1].type),
+					L"Incorrect token type! Expected BEGIN_ARGS!"
+				);
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::TokenType::IDENTIFIER),
+					static_cast<uint8_t>(tokens[2].type),
+					L"Incorrect token type! Expected IDENTIFIER!"
+				);
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::TokenType::END_ARGS),
+					static_cast<uint8_t>(tokens[3].type),
+					L"Incorrect token type! Expected END_ARGS!"
+				);
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::TokenType::BEGIN_BLOCK),
+					static_cast<uint8_t>(tokens[4].type),
+					L"Incorrect token type! Expected BEGIN_BLOCK!"
+				);
+				Assert::AreEqual(
+					static_cast<uint8_t>(Shakara::TokenType::END_BLOCK),
+					static_cast<uint8_t>(tokens[5].type),
+					L"Incorrect token type! Expected END_BLOCK!"
+				);
+			}
+
 		};
 	}
 }

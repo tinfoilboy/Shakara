@@ -18,6 +18,7 @@
 #include "Nodes/ASTWhileStatementNode.hpp"
 #include "Nodes/ASTArrayNode.hpp"
 #include "Nodes/ASTArrayElementIdentifier.hpp"
+#include "Nodes/ASTForeachStatementNode.hpp"
 
 #include "../Tokenizer/TokenizerTypes.hpp"
 
@@ -257,6 +258,18 @@ bool ASTBuilder::_BuildIndividualNode(
 
 		return true;
 	}
+	// Parse a foreach statement
+	else if (tokens[index].type == TokenType::FOREACH_STATEMENT)
+	{
+		_ParseForeachStatement(
+			root,
+			tokens,
+			index,
+			next
+		);
+
+		return true;
+	}
 
 	return false;
 }
@@ -415,7 +428,7 @@ void ASTBuilder::_ParseIfStatement(
 			}
 
 			// Attempt to build a new node for the
-			// function, if one is not able to be
+			// if body, if one is not able to be
 			// made, continue to the next token
 			if (!_BuildIndividualNode(
 				body,
@@ -590,7 +603,7 @@ void ASTBuilder::_ParseWhileStatement(
 		(*next)++;
 
 		// Now, like with functions, do a while loop
-		// to build an if body
+		// to build an while body
 		while (static_cast<size_t>((*next)) < tokens.size())
 		{
 			if (tokens[*next].type == TokenType::END_BLOCK)
@@ -601,7 +614,7 @@ void ASTBuilder::_ParseWhileStatement(
 			}
 
 			// Attempt to build a new node for the
-			// function, if one is not able to be
+			// body, if one is not able to be
 			// made, continue to the next token
 			if (!_BuildIndividualNode(
 				body,
@@ -619,7 +632,7 @@ void ASTBuilder::_ParseWhileStatement(
 		root->Insert(whileStatement);
 	}
 	// This might be a little bit funky but, I usually omit braces
-	// in an if statement if it is only one line, so therefore, I'm
+	// in an while statement if it is only one line, so therefore, I'm
 	// going to make it so that, if there is no BEGIN_BLOCK, a statement
 	// will be yanked ahead and put into the body, this could be a cause
 	// for errors in a user's code, but that's more operator error, I feel
@@ -641,6 +654,153 @@ void ASTBuilder::_ParseWhileStatement(
 		whileStatement->Body(body);
 
 		root->Insert(whileStatement);
+	}
+}
+
+void ASTBuilder::_ParseForeachStatement(
+	RootNode*           root,
+	std::vector<Token>& tokens,
+	size_t              index,
+	ptrdiff_t*          next
+)
+{
+	// Start by setting the next token
+	// as the index passed in
+	*next = index;
+
+	// Create the foreach statement node for
+	// the root node
+	ForeachStatement* foreachStatement = new ForeachStatement();
+	foreachStatement->Type(NodeType::FOREACH_STATEMENT);
+
+	// Move on and parse the collection and names
+	(*next)++;
+
+	// Move on if this token is the beginning
+	// of the collection and names
+	if (tokens[*next].type == TokenType::BEGIN_ARGS)
+		(*next)++;
+
+	// Parse the first node to be used as the
+	// collection for the foreach
+	Node* value = _GetPassableNode(
+		tokens,
+		*next,
+		next
+	);
+
+	value->Parent(foreachStatement);
+	foreachStatement->Collection(value);
+
+	// If we are at the end of the collection
+	// and names, move on
+	if (tokens[*next].type == TokenType::END_ARGS)
+		(*next)++;
+	// We may have an item name to parse, try it
+	else if (tokens[*next].type == TokenType::ARG_SEPERATOR)
+	{
+		// Move to whatever is next
+		(*next)++;
+
+		// Check if it isn't an argument separator
+		// in which case use it as the item name
+		// and move on
+		if (tokens[*next].type != TokenType::ARG_SEPERATOR)
+		{
+			value = _GetPassableNode(
+				tokens,
+				*next,
+				next
+			);
+
+			value->Parent(foreachStatement);
+			foreachStatement->ItemName(value);
+		}
+
+		// Now, check if next is an argument separator
+		// and if so, use whatever is next as the index
+		// name
+		if (tokens[*next].type == TokenType::ARG_SEPERATOR)
+		{
+			(*next)++;
+
+			value = _GetPassableNode(
+				tokens,
+				*next,
+				next
+			);
+
+			value->Parent(foreachStatement);
+			foreachStatement->IndexName(value);
+		}
+
+		// Finally, check if this is end arguments, and
+		// if so, move
+		if (tokens[*next].type == TokenType::END_ARGS)
+			(*next)++;
+	}
+
+	RootNode* body = new RootNode();
+
+	// Once we are done with the collection and names
+	// check if there's a BEGIN_BLOCK token at the
+	// current location
+	if (tokens[*next].type == TokenType::BEGIN_BLOCK)
+	{
+		(*next)++;
+
+		// Now, like with functions, do a while loop
+		// to build a foreach body
+		while (static_cast<size_t>((*next)) < tokens.size())
+		{
+			if (tokens[*next].type == TokenType::END_BLOCK)
+			{
+				(*next)++;
+
+				break;
+			}
+
+			// Attempt to build a new node for the
+			// body, if one is not able to be
+			// made, continue to the next token
+			if (!_BuildIndividualNode(
+				body,
+				tokens,
+				*next,
+				next
+			))
+			(*next)++;
+		}
+
+		// Now add the body statements to the declaration
+		// and add the declaration to the root
+		foreachStatement->Body(body);
+
+		root->Insert(foreachStatement);
+	}
+	// This might be a little bit funky but, I usually omit braces
+	// in an foreach statement if it is only one line, so therefore, I'm
+	// going to make it so that, if there is no BEGIN_BLOCK, a statement
+	// will be yanked ahead and put into the body, this could be a cause
+	// for errors in a user's code, but that's more operator error, I feel
+	else
+	{
+		bool madeNew = _BuildIndividualNode(
+			body,
+			tokens,
+			*next,
+			next
+		);
+
+		if (!madeNew)
+			(*next)++;
+
+		// Set the body to the root node with
+		// only one expression inside and then
+		// continue
+		foreachStatement->Body(body);
+
+		root->Insert(foreachStatement);
 	}
 }
 

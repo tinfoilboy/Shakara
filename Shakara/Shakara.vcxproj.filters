@@ -149,5 +149,8 @@
     <ClInclude Include="AST\Nodes\ASTArrayElementIdentifier.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AST\Nodes\ASTForeachStatementNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

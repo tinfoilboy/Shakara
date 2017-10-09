@@ -15,44 +15,45 @@ namespace Shakara
 			CALL                     = 0x05,
 			IF_STATEMENT             = 0x06,
 			WHILE_STATEMENT          = 0x07,
+			FOREACH_STATEMENT        = 0x08,
 
 			/**
 			 * Type Nodes
 			 */
-			INTEGER                  = 0x08,
-			DECIMAL                  = 0x09,
-			IDENTIFIER               = 0x0A,
-			ARRAY_ELEMENT_IDENTIFIER = 0x0B,
-			STRING                   = 0x0C,
-			BOOLEAN                  = 0x0D,
-			ARRAY                    = 0x0E,
+			INTEGER                  = 0x09,
+			DECIMAL                  = 0x0A,
+			IDENTIFIER               = 0x0B,
+			ARRAY_ELEMENT_IDENTIFIER = 0x0C,
+			STRING                   = 0x0D,
+			BOOLEAN                  = 0x0E,
+			ARRAY                    = 0x0F,
 
 			/**
 			 * Arithmetic Types for
 			 * binary operations
 			 */
-			ADD                      = 0x0F,
-			SUBTRACT                 = 0x10,
-			MULTIPLY                 = 0x11,
-			DIVIDE                   = 0x12,
-			MODULUS                  = 0x13,
-
+			ADD                      = 0x10,
+			SUBTRACT                 = 0x11,
+			MULTIPLY                 = 0x12,
+			DIVIDE                   = 0x13,
+			MODULUS                  = 0x14,
+		
 			/**
 			 * Logical Types
 			 */
-			EQUAL_COMPARISON         = 0x14,
-			NOTEQUAL_COMPARISON      = 0x15,
-			LESS_COMPARISON          = 0x16,
-			GREATER_COMPARISON       = 0x17,
-			LESSEQUAL_COMPARISON     = 0x18,
-			GREATEREQUAL_COMPARISON  = 0x19,
-			AND                      = 0x1A,
-			OR                       = 0x1B,
+			EQUAL_COMPARISON         = 0x15,
+			NOTEQUAL_COMPARISON      = 0x16,
+			LESS_COMPARISON          = 0x17,
+			GREATER_COMPARISON       = 0x18,
+			LESSEQUAL_COMPARISON     = 0x19,
+			GREATEREQUAL_COMPARISON  = 0x1A,
+			AND                      = 0x1B,
+			OR                       = 0x1C,
 		
 			/**
 			 * Special Node Types (return, etc)
 			 */
-			RETURN                   = 0x1C
+			RETURN                   = 0x1D
 		};
 
 		static inline bool IsLogicalOperation(const NodeType& type)

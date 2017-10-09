@@ -277,6 +277,7 @@
     <ClInclude Include="AST\ASTBuilder.hpp" />
     <ClInclude Include="AST\Nodes\ASTBooleanNode.hpp" />
     <ClInclude Include="AST\Nodes\ASTDecimalNode.hpp" />
+    <ClInclude Include="AST\Nodes\ASTForeachStatementNode.hpp" />
     <ClInclude Include="AST\Nodes\ASTFunctionCallNode.hpp" />
     <ClInclude Include="AST\Nodes\ASTFunctionDeclarationNode.hpp" />
     <ClInclude Include="AST\Nodes\ASTIdentifierNode.hpp" />
