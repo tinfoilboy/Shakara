@@ -18,6 +18,7 @@
 #include "../AST/Nodes/ASTWhileStatementNode.hpp"
 #include "../AST/Nodes/ASTArrayNode.hpp"
 #include "../AST/Nodes/ASTArrayElementIdentifier.hpp"
+#include "../AST/Nodes/ASTForeachStatementNode.hpp"
 
 using namespace Shakara;
 using namespace Shakara::AST;
@@ -61,7 +62,7 @@ void Scope::Insert(const std::string& identifier, Node* node)
 			variables.insert(std::make_pair(identifier, node));
 		else
 		{
-			if (find->second->Type() != NodeType::FUNCTION)
+			if (find->second->Type() != NodeType::FUNCTION && find->second->MarkedForDeletion())
 				delete find->second;
 
 			variables[identifier] = node;
@@ -168,6 +169,20 @@ void Interpreter::Execute(
 			WhileStatement* statement = static_cast<WhileStatement*>(node);
 
 			_ExecuteWhileStatement(
+				statement,
+				function,
+				returned,
+				currentScope
+			);
+
+			if (function && *returned)
+				break;
+		}
+		else if (node->Type() == NodeType::FOREACH_STATEMENT)
+		{
+			ForeachStatement* statement = static_cast<ForeachStatement*>(node);
+
+			_ExecuteForeachStatement(
 				statement,
 				function,
 				returned,
@@ -656,6 +671,128 @@ void Interpreter::_ExecuteWhileStatement(
 	{
 		delete condition;
 		condition = nullptr;
+	}
+}
+
+void Interpreter::_ExecuteForeachStatement(
+	ForeachStatement* statement,
+	bool              function,
+	Node**            returnNode,
+	Scope&            scope
+)
+{
+	// First, try and grab the referenced collection
+	// as well as make sure that it is an identifier
+	Node* collection = statement->Collection();
+
+	if (collection->Type() == NodeType::IDENTIFIER)
+		collection = scope.Search(static_cast<IdentifierNode*>(collection)->Value());
+	else if (collection->Type() == NodeType::CALL)
+		collection = _ExecuteFunction(static_cast<FunctionCall*>(collection), scope);
+	else if (collection->Type() == NodeType::BINARY_OP)
+		collection = _ExecuteBinaryOperation(static_cast<BinaryOperation*>(collection), scope);
+	else if (collection->Type() == NodeType::ARRAY_ELEMENT_IDENTIFIER)
+		collection = _GetArrayElement(static_cast<ArrayElementIdentifierNode*>(collection), scope);
+
+	// Make sure that this collection is either an array
+	// or a string type
+	if (collection->Type() != NodeType::ARRAY && collection->Type() != NodeType::STRING)
+	{
+		std::cerr << "Interpreter Error! A foreach loop must have a reference to a collection type!" << std::endl;
+		std::cerr << "Collection type: " << GetNodeTypeName(collection->Type()) << std::endl;
+
+		if (m_errorHandle)
+			m_errorHandle();
+
+		return;
+	}
+
+	// Grab the collection length based off of the type
+	size_t collectionLength = 0;
+
+	if (collection->Type() == NodeType::ARRAY)
+		collectionLength = static_cast<ArrayNode*>(collection)->Size();
+	else if (collection->Type() == NodeType::STRING)
+		collectionLength = static_cast<StringNode*>(collection)->Value().size();
+
+	std::string itemIdentifier = "item";
+
+	// Check and see if we have an item name, and if
+	// so, use that instead of the generic "item"
+	if (statement->ItemName())
+	{
+		// Make sure that the item identifier is
+		// an identifier type
+		if (statement->ItemName()->Type() != NodeType::IDENTIFIER)
+		{
+			std::cerr << "Interpreter Error! The item name for the foreach must be an identifier!" << std::endl;
+			std::cerr << "Item name type: " << GetNodeTypeName(statement->ItemName()->Type()) << std::endl;
+
+			if (m_errorHandle)
+				m_errorHandle();
+
+			return;
+		}
+
+		itemIdentifier = static_cast<IdentifierNode*>(statement->ItemName())->Value();
+	}
+
+	// Check and see if we have an index name, and if
+	// so, set the index in the scope with the identifier
+	std::string indexIdentifier = "";
+
+	if (statement->IndexName())
+	{
+		// Make sure that the item identifier is
+		// an identifier type
+		if (statement->IndexName()->Type() != NodeType::IDENTIFIER)
+		{
+			std::cerr << "Interpreter Error! The index name for the foreach must be an identifier!" << std::endl;
+			std::cerr << "Index name type: " << GetNodeTypeName(statement->IndexName()->Type()) << std::endl;
+
+			if (m_errorHandle)
+				m_errorHandle();
+
+			return;
+		}
+
+		indexIdentifier = static_cast<IdentifierNode*>(statement->IndexName())->Value();
+	}
+
+	// Create another scope for the foreach statement, as
+	// to not muddy up the previous scope
+	Scope foreachScope  = { 0 };
+	foreachScope.parent = &scope;
+
+	// Now, for the while loop, while the condition evaluates to
+	// false, execute and then subsequently re-evaluate
+	for (size_t index = 0; index < collectionLength; index++)
+	{
+		// Set the scope variables based on what
+		// was passed in
+		Node* element = _GetArrayElement(
+			collection,
+			index
+		);
+		foreachScope.Insert(itemIdentifier, element);
+
+		// Try and insert the index if you can
+		if (!indexIdentifier.empty())
+		{
+			IntegerNode* indexNode = new IntegerNode();
+			indexNode->Type(NodeType::INTEGER);
+
+			indexNode->Value(false, index);
+
+			foreachScope.Insert(indexIdentifier, indexNode);
+		}
+
+		Execute(
+			static_cast<RootNode*>(statement->Body()),
+			function,
+			returnNode,
+			&foreachScope
+		);
 	}
 }
 
@@ -3265,20 +3402,40 @@ AST::Node* Interpreter::_GetArrayElement(
 	// The index node is no longer needed, delete
 	delete index;
 
+	return _GetArrayElement(
+		arrayNode,
+		arrIndex
+	);
+}
+
+AST::Node* Interpreter::_GetArrayElement(
+	AST::Node* collection,
+	size_t     index
+)
+{
+	if (collection->Type() != NodeType::ARRAY && collection->Type() != NodeType::STRING)
+	{
+		std::cerr << "Interpreter Error! Cannot use array access syntax on a non collection type!" << std::endl;
+		std::cerr << "Actual type: " << GetNodeTypeName(collection->Type()) << std::endl;
+
+		if (m_errorHandle)
+			m_errorHandle();
+	}
+
 	// The length of the collection to access
 	size_t length = 0;
 
-	if (arrayNode->Type() == NodeType::ARRAY)
-		length = static_cast<ArrayNode*>(arrayNode)->Size();
-	else if (arrayNode->Type() == NodeType::STRING)
-		length = static_cast<StringNode*>(arrayNode)->Value().size();
+	if (collection->Type() == NodeType::ARRAY)
+		length = static_cast<ArrayNode*>(collection)->Size();
+	else if (collection->Type() == NodeType::STRING)
+		length = static_cast<StringNode*>(collection)->Value().size();
 
 	// Check if the size is within bounds
-	if (arrIndex < 0 || static_cast<size_t>(arrIndex) >= length)
+	if (index < 0 || static_cast<size_t>(index) >= length)
 	{
 		std::cerr << "Interpreter Error! Collection index out of bounds!" << std::endl;
-		std::cerr << "Index: " << arrIndex << "; Size: " << length << std::endl;
-	
+		std::cerr << "Index: " << index << "; Size: " << length << std::endl;
+
 		if (m_errorHandle)
 			m_errorHandle();
 	}
@@ -3287,15 +3444,15 @@ AST::Node* Interpreter::_GetArrayElement(
 
 	// If we are grabbing from an array, just return
 	// the indexed node
-	if (arrayNode->Type() == NodeType::ARRAY)
-		returnNode = (*static_cast<ArrayNode*>(arrayNode))[arrIndex];
+	if (collection->Type() == NodeType::ARRAY)
+		returnNode = (*static_cast<ArrayNode*>(collection))[index];
 	// Return a single character from the string
-	else if (arrayNode->Type() == NodeType::STRING)
+	else if (collection->Type() == NodeType::STRING)
 	{
 		returnNode = new StringNode();
 		returnNode->Type(NodeType::STRING);
 
-		static_cast<StringNode*>(returnNode)->Value(std::string(1, static_cast<StringNode*>(arrayNode)->Value().at(arrIndex)));
+		static_cast<StringNode*>(returnNode)->Value(std::string(1, static_cast<StringNode*>(collection)->Value().at(index)));
 
 		returnNode->MarkDelete(true);
 	}

@@ -30,6 +30,8 @@ namespace Shakara
 		class ArrayNode;
 
 		class ArrayElementIdentifierNode;
+
+		class ForeachStatement;
 	}
 
 	/**
@@ -174,6 +176,23 @@ namespace Shakara
 			bool              function,
 			AST::Node**       returned,
 			Scope&            scope
+		);
+
+		/**
+		 * Take in a foreach statement and iterate through it
+		 * if possible.
+		 *
+		 * This function takes in whether or not its run within
+		 * a function, as well as a returned node and a scope.
+		 *
+		 * The returned node is only for within functions, and is
+		 * passed back to the function if not null.
+		 */
+		void _ExecuteForeachStatement(
+			AST::ForeachStatement* statement,
+			bool                   function,
+			AST::Node**            returned,
+			Scope&                 scope
 		);
 
 		/**
@@ -361,6 +380,16 @@ namespace Shakara
 			AST::ArrayElementIdentifierNode* identifier,
 			Scope&                           scope
 		);
+
+		/**
+		 * Grab a single node from a collection using an
+		 * index passed in
+		 */
+		AST::Node* _GetArrayElement(
+			AST::Node* collection,
+			size_t     index
+		);
+
 
 		/**
 		 * Create an array instance for the command

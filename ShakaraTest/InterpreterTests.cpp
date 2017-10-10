@@ -743,6 +743,54 @@ namespace ShakaraTest
 				);
 			}
 
+			TEST_METHOD(InterpretForeachLooping)
+			{
+				// Create a test statement and insert
+				// it into a stringstream
+				std::string code = R"(
+					test_array = [5] {
+						"Hello",
+						"Darkness",
+						"My",
+						"Old",
+						"Friend"
+					}
+
+					foreach (test_array)
+						print(item)
+
+					foreach (test_array,, idx)
+						print(item, ": ", idx)
+
+					foreach (test_array, itr, idx)
+						print(itr, ": ", idx)
+				)";
+
+				std::stringstream stream(code, std::ios::in);
+
+				// Tokenize the stringstream
+				std::vector<Shakara::Token> tokens;
+
+				Shakara::Tokenizer tokenizer;
+				tokenizer.Tokenize(stream, tokens);
+
+				// Run the ASTBuilder to grab an AST
+				Shakara::AST::RootNode   root;
+				Shakara::AST::ASTBuilder builder;
+				builder.Build(&root, tokens);
+
+				std::stringstream output;
+
+				Shakara::Interpreter interpreter(output);
+				interpreter.Execute(&root);
+
+				// Should be "HelloDarknessMyOldFriendHello: 0Darkness: 1My: 2Old: 3Friend: 4Hello: 0Darkness: 1My: 2Old: 3Friend: 4"
+				Assert::AreEqual(
+					"HelloDarknessMyOldFriendHello: 0Darkness: 1My: 2Old: 3Friend: 4Hello: 0Darkness: 1My: 2Old: 3Friend: 4",
+					output.str().c_str()
+				);
+			}
+			
 		};
 	}
 }
