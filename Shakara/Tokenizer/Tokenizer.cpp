@@ -542,9 +542,9 @@ bool Tokenizer::_DetermineTokenTypeFromValue(TokenType* type, const std::string&
 		}
 	}
 	
-	// If there are only non-digits, its
-	// an identifier
-	if (containsNonDigits && !containsDigits && !containsDecimal)
+	// If there are digits and/or non-digits
+	// besides a decimal point, it's an identifier
+	if ((containsNonDigits && !containsDigits && !containsDecimal) || (containsNonDigits && containsDigits && !containsDecimal))
 	{
 		*type = TokenType::IDENTIFIER;
 
