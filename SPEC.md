@@ -269,11 +269,10 @@ You may also add an optional integer exit code, like such:
 
     exit(1)
 
-### *For-each Loops*
+### For-each Loops
 
-In attempt to make iterating through collections simple, implementing a
-syntax like D could be beneficial. In my head this is how you could start
-it:
+Iterating through collections is supposed to be simple, due to how
+commonplace it is.
 
     foreach (collection)
 
